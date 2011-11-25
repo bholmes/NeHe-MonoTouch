@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeHe-Lesson4", "NeHe-Lesson4\NeHe-Lesson4.csproj", "{7E5219EB-9CF7-4881-AAF3-88DD95305543}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|iPhoneSimulator = Debug|iPhoneSimulator
+		Release|iPhoneSimulator = Release|iPhoneSimulator
+		Debug|iPhone = Debug|iPhone
+		Release|iPhone = Release|iPhone
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Debug|iPhone.ActiveCfg = Debug|iPhone
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Debug|iPhone.Build.0 = Debug|iPhone
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhoneSimulator
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Debug|iPhoneSimulator.Build.0 = Debug|iPhoneSimulator
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Release|iPhone.ActiveCfg = Release|iPhone
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Release|iPhone.Build.0 = Release|iPhone
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
+		{7E5219EB-9CF7-4881-AAF3-88DD95305543}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = NeHe-Lesson4\NeHe-Lesson4.csproj
+	EndGlobalSection
+EndGlobal

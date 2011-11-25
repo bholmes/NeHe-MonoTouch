@@ -58,8 +58,8 @@ namespace NeHeLesson1
 		
 		public override bool ShouldAutorotateToInterfaceOrientation (UIInterfaceOrientation toInterfaceOrientation)
 		{
-			return (toInterfaceOrientation == UIInterfaceOrientation.PortraitUpsideDown || 
-				toInterfaceOrientation == UIInterfaceOrientation.Portrait);
-		}
+			return (toInterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || toInterfaceOrientation == UIInterfaceOrientation.Portrait ||
+				toInterfaceOrientation == UIInterfaceOrientation.LandscapeRight);
+		}		
 	}
 }

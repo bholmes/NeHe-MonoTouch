@@ -43,14 +43,14 @@ namespace NeHeLesson1
 		public override void OnResignActivation (UIApplication application)
 		{
 			((EAGLView)(viewController.View)).Stop ();
-			((EAGLView)(viewController.View)).Run(5);
+			((EAGLView)(viewController.View)).Run(5.0);
 
 		}
 		
 		public override void OnActivated (UIApplication application)
 		{
 			((EAGLView)(viewController.View)).Stop ();
-			((EAGLView)(viewController.View)).Run(60);
+			((EAGLView)(viewController.View)).Run(60.0);
 		}
 	}
 }

@@ -17,6 +17,10 @@ namespace NeHeLesson1
 	[Register ("EAGLView")]
 	public class EAGLView : iPhoneOSGameView
 	{
+		private float rtri = 0f;
+		private float rquad = 0f;
+		
+		
 		[Export("initWithCoder:")]
 		public EAGLView (NSCoder coder) : base (coder)
 		{
@@ -51,40 +55,34 @@ namespace NeHeLesson1
 			base.OnLoad (e);
 			
 				
-			GL1.ShadeModel(All1.Smooth);                        // Enables Smooth Shading
-			GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);                   // Black Background
+			GL1.ShadeModel(All1.Smooth);								// Enables Smooth Shading
+			GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);						// Black Background
 
-			GL.ClearDepth(1.0f);                         // Depth Buffer Setup
-			GL.Enable(All.DepthTest);                        // Enables Depth Testing
-			GL.DepthFunc( All.Lequal);                         // The Type Of Depth Test To Do
-						
-							
-			GL1.Hint( All1.PerspectiveCorrectionHint , All1.Nicest);          // Really Nice Perspective Calculations
+			GL.ClearDepth(1.0f);										// Depth Buffer Setup
+			GL.Enable(All.DepthTest);									// Enables Depth Testing
+			GL.DepthFunc( All.Lequal);									// The Type Of Depth Test To Do
+			
+			GL1.Hint( All1.PerspectiveCorrectionHint , All1.Nicest);	// Really Nice Perspective Calculations
 
 		}
+
 		
-		protected override void OnResize (EventArgs e)
+		void SetupView ()
 		{
-			base.OnResize (e);
+			GL.Viewport(0, 0, Size.Width, Size.Height);					// Reset The Current Viewport
+			GL1.MatrixMode (All1.Projection);                        	// Select The Projection Matrix
 			
-			GL.Viewport(0, 0, Size.Width, Size.Height);                    // Reset The Current Viewport
-			GL1.MatrixMode (All1.Projection);                        // Select The Projection Matrix
-	
-    		GL1.LoadIdentity ();                           // Reset The Projection Matrix            
-
-            // Calculate The Aspect Ratio Of The Window
-			Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView((float)Math.PI / 4, Size.Width / (float)Size.Height, 1.0f, 64.0f);
-            GL1.MatrixMode (All1.Projection);
-            GL1.LoadMatrix(new float [] {projection.M11,projection.M12,projection.M13,projection.M14,
-										projection.M21,projection.M22,projection.M23,projection.M24,
-										projection.M31,projection.M32,projection.M33,projection.M34,
-										projection.M41,projection.M42,projection.M34,projection.M44});
+			GL1.LoadIdentity ();										// Reset The Projection Matrix            
 			
-			GL1.MatrixMode(All1.Modelview);                     // Select The Modelview Matrix
-			GL1.LoadIdentity ();                           // Reset The Modelview Matrix
+			// Calculate The Aspect Ratio Of The Window
+			Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView((float)Math.PI / 4,  this.Bounds.Size.Width / this.Bounds.Size.Height, 1.0f, 64.0f);
+			GL1.MatrixMode (All1.Projection);
+			GL1.LoadMatrix(ref projection.Row0.X);
+			
+			GL1.MatrixMode(All1.Modelview);								// Select The Modelview Matrix
+			GL1.LoadIdentity ();										// Reset The Modelview Matrix
 		}
 		
-
 		
 		protected override void OnRenderFrame (FrameEventArgs e)
 		{
@@ -92,9 +90,10 @@ namespace NeHeLesson1
 			
 			MakeCurrent ();
 			
-			GL1.Clear((int)(All.ColorBufferBit | All.DepthBufferBit));         // Clear The Screen And The Depth Buffer
-    		GL1.LoadIdentity();                           // Reset The Current Modelview Matrix
+			SetupView ();
 			
+			GL1.Clear((int)(All.ColorBufferBit | All.DepthBufferBit));	// Clear The Screen And The Depth Buffer
+    		GL1.LoadIdentity();											// Reset The Current Modelview Matrix
 			
 			SwapBuffers ();
 		}

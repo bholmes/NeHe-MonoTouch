@@ -73,9 +73,5 @@
     <InterfaceDefinition Include="OpenGLViewController_iPhone.xib" />
     <InterfaceDefinition Include="OpenGLViewController_iPad.xib" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Shader.fsh" />
-    <Content Include="Shader.vsh" />
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -21,6 +21,7 @@ namespace NeHeLesson4
 		// This method is invoked when the application has loaded its UI and is ready to run
 		public override bool FinishedLaunching (UIApplication app, NSDictionary options)
 		{
+			app.SetStatusBarHidden (true, false);
 			// create a new window instance based on the screen size
 			window = new UIWindow (UIScreen.MainScreen.Bounds);
 
@@ -32,7 +33,7 @@ namespace NeHeLesson4
 			}
 			window.RootViewController = viewController;
 			
-			((EAGLView)(viewController.View)).Run (60);
+			((EAGLView)(viewController.View)).Run (60.0);
 
 			// make the window visible
 			window.MakeKeyAndVisible ();

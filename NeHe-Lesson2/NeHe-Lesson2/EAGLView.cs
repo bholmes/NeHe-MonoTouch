@@ -50,16 +50,25 @@ namespace NeHeLesson2
 		{
 			base.OnLoad (e);
 			
-				
 			GL1.ShadeModel(All1.Smooth);								// Enables Smooth Shading
-			GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);						// Black Background
+			GL.ClearColor(0.0f, 0.0f, 0.0f, 0.5f);						// Black Background
 
-			GL.ClearDepth(1.0f);										// Depth Buffer Setup
-			GL.Enable(All.DepthTest);									// Enables Depth Testing
-			GL.DepthFunc( All.Lequal);									// The Type Of Depth Test To Do
+			// Create a depth renderbuffer
+			uint depthRenderBuffer = 0;
+			GL.GenRenderbuffers (1,ref depthRenderBuffer);
+			GL.BindRenderbuffer (All.Renderbuffer, depthRenderBuffer);
 			
-			GL1.Hint( All1.PerspectiveCorrectionHint , All1.Nicest);	// Really Nice Perspective Calculations
-
+			// Allocate storage for the new renderbuffer
+			GL.RenderbufferStorage (All.Renderbuffer, All.DepthComponent16, Size.Width, Size.Height);
+			
+			// Attach the renderbuffer to the framebuffer's depth attachment point
+			GL.FramebufferRenderbuffer (All.Framebuffer, All.DepthAttachment, All.Renderbuffer, depthRenderBuffer);
+			
+			GL1.ClearDepth(1.0f);										// Depth Buffer Setup
+			GL1.Enable(All1.DepthTest);									// Enables Depth Testing
+			GL1.DepthFunc( All1.Lequal);								// The Type Of Depth Test To Do
+			
+			GL1.Hint( All1.PerspectiveCorrectionHint , All1.Nicest);	// Really Nice Perspective Calculations	
 		}
 
 		

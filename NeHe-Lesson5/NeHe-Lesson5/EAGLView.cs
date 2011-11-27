@@ -73,7 +73,6 @@ namespace NeHeLesson5
 			GL1.DepthFunc( All1.Lequal);								// The Type Of Depth Test To Do
 			
 			GL1.Hint( All1.PerspectiveCorrectionHint , All1.Nicest);	// Really Nice Perspective Calculations	
-			
 		}
 
 		

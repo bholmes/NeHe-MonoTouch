@@ -78,23 +78,62 @@ namespace NeHeLesson6
 		
 		unsafe private bool LoadGLTextures ()
 		{
-			using (NSData ns = NSData.FromFile ("NeHeImage.pvrtc"))
+			fixed (int* texture_ptr = texture)
 			{
-				fixed (int* texture_ptr = texture)
-				{
-					GL.GenTextures (1, &texture_ptr[0]);
-					GL.BindTexture (All.Texture2D, texture[0]);
-					
-					GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.Linear);
-					GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Linear);
-					
-					GL.CompressedTexImage2D (All.Texture2D, 0, All.CompressedRgbPvrtc4Bppv1Img, 256, 256, 0, (int)ns.Length, ns.Bytes);
-				}
+				GL.GenTextures (1, &texture_ptr[0]);
+				GL.BindTexture (All.Texture2D, texture[0]);
+				
+				GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.Linear);
+				GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Linear);
 			}
+			
+			bool loadUsingPng = true;
+			if (loadUsingPng)
+				LoadTextureFromPng ();
+			else
+				LoadTextureFromPvrtc ();
 
 			return true;	
 		}
 
+		void LoadTextureFromPvrtc ()
+		{
+			using (NSData ns = NSData.FromFile ("NeHeImage.pvrtc"))
+			{
+				GL.CompressedTexImage2D (All.Texture2D, 0, All.CompressedRgbPvrtc4Bppv1Img, 256, 256, 0, (int)ns.Length, ns.Bytes);
+			}
+		}
+
+		void LoadTextureFromPng ()
+		{
+			using (UIImage img = UIImage.FromFile ("NeHe.png"))
+			{
+				int width = img.CGImage.Width;
+				int height = img.CGImage.Height;
+				using (MonoTouch.CoreGraphics.CGColorSpace colorSpaceRef =  MonoTouch.CoreGraphics.CGColorSpace.CreateDeviceRGB ())
+				{
+					IntPtr imageData = System.Runtime.InteropServices.Marshal.AllocCoTaskMem (height * width * 4);
+					try
+					{						
+						using (MonoTouch.CoreGraphics.CGBitmapContext context = new MonoTouch.CoreGraphics.CGBitmapContext (
+							imageData, width, height, 8, 4 * width, colorSpaceRef, MonoTouch.CoreGraphics.CGBitmapFlags.ByteOrder32Big | 
+							MonoTouch.CoreGraphics.CGBitmapFlags.PremultipliedLast))
+						{
+							colorSpaceRef.Dispose ();
+							context.ClearRect (new System.Drawing.RectangleF (0.0f, 0.0f, (float)width, (float)height));
+							context.TranslateCTM (0, 0);
+							context.DrawImage (new System.Drawing.RectangleF (0.0f, 0.0f, (float)width, (float)height), img.CGImage);
+							
+							GL1.TexImage2D (All1.Texture2D, 0, (int)All1.Rgba, width, height, 0, All1.Rgba, All1.UnsignedByte, imageData);
+						}
+					}
+					finally
+					{
+						System.Runtime.InteropServices.Marshal.FreeCoTaskMem (imageData);
+					}
+				}
+			}
+		}
 		
 		void SetupView ()
 		{

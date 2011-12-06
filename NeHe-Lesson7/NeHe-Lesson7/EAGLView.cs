@@ -17,12 +17,60 @@ namespace NeHeLesson7
 	[Register ("EAGLView")]
 	public class EAGLView : iPhoneOSGameView
 	{
+		bool light = false;  				// Lighting On/Off
+		bool lp = false;					// L Pressed
+		bool fp = false;					// F Pressed
+		
+		float xrot = 0f;					// X Rotation
+		float yrot = 0f;					// Y Rotation
+		float xspeed = 0f;					// X Rotation Speed
+		float yspeed = 0f;					// Y Rotation Speed
+		float z=-5.0f;						// Depth Into The Screen
+		
+		float [] LightAmbient = { 0.5f, 0.5f, 0.5f, 1.0f };		// Ambient Light Values ( NEW )
+		float [] LightDiffuse = { 1.0f, 1.0f, 1.0f, 1.0f };		// Diffuse Light Values ( NEW )
+		float [] LightPosition = { 0.0f, 0.0f, 2.0f, 1.0f };	// Light Position ( NEW )
+		
+		uint filter = 0;						// Which Filter To Use
+		uint [] texture = new uint[3];			// Storage for 3 textures
+
+		
 		[Export("initWithCoder:")]
 		public EAGLView (NSCoder coder) : base (coder)
 		{
 			LayerRetainsBacking = false;
 			LayerColorFormat    = EAGLColorFormat.RGBA8;
 			ContextRenderingApi = EAGLRenderingAPI.OpenGLES1;
+			
+			SetupButtons ();
+		}
+		
+		UIButton upButton, downButton, leftButton, rightButton, lightButton, filterButton, plusButton, minusButton;
+		
+		private void SetupButtons()
+		{
+			float ypos = this.Bounds.Width - 40f;
+			float xpos = this.Bounds.Height - 60f;
+			
+			this.AddButton (ref lightButton, 10, ypos, "Light");
+			this.AddButton (ref filterButton, xpos, ypos, "Filter");
+			ypos-=40;
+			this.AddButton (ref upButton, 10, ypos, "Up");
+			this.AddButton (ref downButton, xpos, ypos, "Down");
+			ypos-=40;
+			this.AddButton (ref leftButton, 10, ypos, "Left");
+			this.AddButton (ref rightButton, xpos, ypos, "Right");
+			ypos-=40;
+			this.AddButton (ref plusButton, 10, ypos, "+");
+			this.AddButton (ref minusButton, xpos, ypos, "-");
+		}
+		
+		private void AddButton (ref UIButton button, float x, float y, string title)
+		{
+			button = new UIButton (new System.Drawing.RectangleF (x, y, 50, 30));
+			button.BackgroundColor = new UIColor (0, 0, 1, 1);
+			button.SetTitle (title, UIControlState.Normal);
+			this.AddSubview (button);	
 		}
 		
 		[Export ("layerClass")]
@@ -72,19 +120,18 @@ namespace NeHeLesson7
 			GL1.DepthFunc( All1.Lequal);								// The Type Of Depth Test To Do
 			
 			GL1.Hint( All1.PerspectiveCorrectionHint , All1.Nicest);	// Really Nice Perspective Calculations	
+			
+			GL1.Light(All1.Light0, All1.Ambient, LightAmbient);			// Setup The Ambient Light	
+			GL1.Light(All1.Light0, All1.Diffuse, LightDiffuse);			// Setup The Diffuse Light
+			GL1.Light(All1.Light0, All1.Position,LightPosition);		// Position The Light
+			GL1.Enable (All1.Light0);
 		}
-		
-		int [] texture = new int[1];
 		
 		unsafe private bool LoadGLTextures ()
 		{
-			fixed (int* texture_ptr = texture)
+			fixed (uint* texture_ptr = texture)
 			{
-				GL.GenTextures (1, &texture_ptr[0]);
-				GL.BindTexture (All.Texture2D, texture[0]);
-				
-				GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.Linear);
-				GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Linear);
+				GL.GenTextures (3, &texture_ptr[0]);
 			}
 			
 			bool loadUsingPng = true;
@@ -101,7 +148,25 @@ namespace NeHeLesson7
 			//texturetool -e PVRTC -o Crate.pvrtc Crate.png
 			using (NSData ns = NSData.FromFile ("Crate.pvrtc"))
 			{
+				GL.BindTexture (All.Texture2D, texture[0]);
+				GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Nearest);
+				GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.Nearest);
+				
 				GL.CompressedTexImage2D (All.Texture2D, 0, All.CompressedRgbPvrtc4Bppv1Img, 256, 256, 0, (int)ns.Length, ns.Bytes);
+				
+				GL.BindTexture (All.Texture2D, texture[1]);
+				GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Linear);
+				GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.Linear);
+				
+				GL.CompressedTexImage2D (All.Texture2D, 0, All.CompressedRgbPvrtc4Bppv1Img, 256, 256, 0, (int)ns.Length, ns.Bytes);
+				
+				GL.BindTexture (All.Texture2D, texture[2]);
+				GL1.TexParameter (All1.Texture2D, All1.GenerateMipmap, 1);
+				GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Linear);
+				GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.LinearMipmapNearest);
+				
+				GL.CompressedTexImage2D (All.Texture2D, 0, All.CompressedRgbPvrtc4Bppv1Img, 256, 256, 0, (int)ns.Length, ns.Bytes);
+				
 			}
 		}
 
@@ -124,6 +189,23 @@ namespace NeHeLesson7
 							context.ClearRect (new System.Drawing.RectangleF (0.0f, 0.0f, (float)width, (float)height));
 							context.TranslateCTM (0, 0);
 							context.DrawImage (new System.Drawing.RectangleF (0.0f, 0.0f, (float)width, (float)height), img.CGImage);
+							
+							GL.BindTexture (All.Texture2D, texture[0]);
+							GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Nearest);
+							GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.Nearest);
+							
+							GL1.TexImage2D (All1.Texture2D, 0, (int)All1.Rgba, width, height, 0, All1.Rgba, All1.UnsignedByte, imageData);
+							
+							GL.BindTexture (All.Texture2D, texture[1]);
+							GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Linear);
+							GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.Linear);
+							
+							GL1.TexImage2D (All1.Texture2D, 0, (int)All1.Rgba, width, height, 0, All1.Rgba, All1.UnsignedByte, imageData);
+							
+							GL.BindTexture (All.Texture2D, texture[2]);
+							GL1.TexParameter (All1.Texture2D, All1.GenerateMipmap, 1);
+							GL.TexParameter (All.Texture2D, All.TextureMagFilter, (int)All.Linear);
+							GL.TexParameter (All.Texture2D, All.TextureMinFilter, (int)All.LinearMipmapNearest);
 							
 							GL1.TexImage2D (All1.Texture2D, 0, (int)All1.Rgba, width, height, 0, All1.Rgba, All1.UnsignedByte, imageData);
 						}
@@ -151,11 +233,7 @@ namespace NeHeLesson7
 			GL1.MatrixMode(All1.Modelview);								// Select The Modelview Matrix
 			GL1.LoadIdentity ();										// Reset The Modelview Matrix
 		}
-		
-		float xrot = 0.0f;
-		float yrot = 0.0f;
-		float zrot = 0.0f;
-		
+				
 		protected override void OnRenderFrame (FrameEventArgs e)
 		{
 			base.OnRenderFrame (e);
@@ -167,75 +245,107 @@ namespace NeHeLesson7
 			GL1.Clear((int)(All.ColorBufferBit | All.DepthBufferBit));	// Clear The Screen And The Depth Buffer
     		GL1.LoadIdentity();											// Reset The Current Modelview Matrix
 			
-			GL1.LoadIdentity ();
-			GL1.Translate(0.0f,0.0f,-5.0f);              // Move Right And Into The Screen
+			GL1.Translate(0.0f,0.0f,z);					// Move Right And Into The Screen
+			GL1.Rotate(xrot,1.0f,0.0f,0.0f);			// Rotate On The X Axis By xrot
+			GL1.Rotate(yrot,0.0f,1.0f,0.0f);			// Rotate On The Y Axis By yrot
 			
-			GL1.Rotate (xrot, 1.0f, 0.0f, 0.0f);		// Rotate on the X Axis
-			GL1.Rotate (yrot, 0.0f, 1.0f, 0.0f);		// Rotate on the Y Axis
-			GL1.Rotate (zrot, 0.0f, 0.0f, 1.0f);		// Rotate on the Z Axis
+			GL1.BindTexture(All1.Texture2D, texture[filter]);			// Select A Texture Based On filter
+ 
 			
 			float [] cubeVerticies = {
-				-1.0f, 1.0f,-1.0f,						// Top Left Of The Quad (Top)
-				-1.0f, 1.0f, 1.0f,						// Bottom Left Of The Quad (Top)
-				1.0f, 1.0f,-1.0f,						// Top Right Of The Quad (Top)
-				1.0f, 1.0f, 1.0f,						// Bottom Right Of The Quad (Top)
+				-1.0f, 1.0f, 1.0f,					// Top Left Of The Quad (Front)
+				-1.0f,-1.0f, 1.0f,					// Bottom Left Of The Quad (Front)
+				 1.0f, 1.0f, 1.0f,					// Top Right Of The Quad (Front)
+				 1.0f,-1.0f, 1.0f,					// Bottom Right Of The Quad (Front)
 
-				-1.0f,-1.0f, 1.0f,						// Top Left Of The Quad (Bottom)
-				-1.0f,-1.0f,-1.0f,						// Bottom Left Of The Quad (Bottom)
-				1.0f,-1.0f, 1.0f,						// Top Right Of The Quad (Bottom)
-				1.0f,-1.0f,-1.0f,						// Bottom Right Of The Quad (Bottom)
+				-1.0f,-1.0f,-1.0f,					// Bottom Left Of The Quad (Back)
+				-1.0f, 1.0f,-1.0f,					// Top Left Of The Quad (Back)
+				 1.0f,-1.0f,-1.0f,					// Bottom Right Of The Quad (Back)
+				 1.0f, 1.0f,-1.0f,					// Top Right Of The Quad (Back)
 				
-				-1.0f, 1.0f, 1.0f,						// Top Left Of The Quad (Front)
-				-1.0f,-1.0f, 1.0f,						// Bottom Left Of The Quad (Front)
-				1.0f, 1.0f, 1.0f,						// Top Right Of The Quad (Front)
-				1.0f,-1.0f, 1.0f,						// Bottom Right Of The Quad (Front)
+				-1.0f, 1.0f,-1.0f,					// Top Left Of The Quad (Top)
+				-1.0f, 1.0f, 1.0f,					// Bottom Left Of The Quad (Top)
+				 1.0f, 1.0f,-1.0f,					// Top Right Of The Quad (Top)
+				 1.0f, 1.0f, 1.0f,					// Bottom Right Of The Quad (Top)
 
-				1.0f, 1.0f,-1.0f,						// Top Left Of The Quad (Back)
-				1.0f,-1.0f,-1.0f,						// Bottom Left Of The Quad (Back)
-				-1.0f, 1.0f,-1.0f,						// Top Right Of The Quad (Back)
-				-1.0f,-1.0f,-1.0f,						// Bottom Right Of The Quad (Back)
+				-1.0f,-1.0f,-1.0f,					// Top Left Of The Quad (Bottom)
+				 1.0f,-1.0f,-1.0f,					// Top Right Of The Quad (Bottom)
+				-1.0f,-1.0f, 1.0f,					// Bottom Left Of The Quad (Bottom)
+				 1.0f,-1.0f, 1.0f,					// Bottom Right Of The Quad (Bottom)
 				
-				-1.0f, 1.0f,-1.0f,						// Top Left Of The Quad (Left)
-				-1.0f,-1.0f,-1.0f,						// Bottom Left Of The Quad (Left)
-				-1.0f, 1.0f, 1.0f,						// Top Right Of The Quad (Left)
-				-1.0f,-1.0f, 1.0f,						// Bottom Right Of The Quad (Left)
+				 1.0f,-1.0f,-1.0f,					// Bottom Right Of The Quad (Right)
+				 1.0f, 1.0f,-1.0f,					// Top Right Of The Quad (Right)
+				 1.0f,-1.0f, 1.0f,					// Bottom Left Of The Quad (Right)
+				 1.0f, 1.0f, 1.0f,					// Top Left Of The Quad (Right)
 				
-		        1.0f, 1.0f, 1.0f,						// Top Left Of The Quad (Right)
-		        1.0f,-1.0f, 1.0f,						// Bottom Left Of The Quad (Right)
-				1.0f, 1.0f,-1.0f,						// Top Right Of The Quad (Right)
-		        1.0f,-1.0f,-1.0f,						// Bottom Right Of The Quad (Right)
+		        -1.0f,-1.0f,-1.0f,					// Bottom Right Of The Quad (Left)
+		        -1.0f,-1.0f, 1.0f,					// Bottom Left Of The Quad (Left)
+				-1.0f, 1.0f,-1.0f,					// Top Right Of The Quad (Left)
+		        -1.0f, 1.0f, 1.0f,					// Top Left Of The Quad (Left)
 			};
 			
 			float [] cubeTexs = {
 				0.0f, 0.0f,								// Top Left Of The Quad (Front)
 				0.0f, 1.0f,								// Bottom Left Of The Quad (Front)
 				1.0f, 0.0f,								// Top Right Of The Quad (Front)
-				1.0f,1.0f,								// Bottom Right Of The Quad (Front)	
+				1.0f, 1.0f,								// Bottom Right Of The Quad (Front)	
 				
-				0.0f, 0.0f,								// Top Left Of The Quad (Front)
-				0.0f, 1.0f,								// Bottom Left Of The Quad (Front)
-				1.0f, 0.0f,								// Top Right Of The Quad (Front)
-				1.0f,1.0f,								// Bottom Right Of The Quad (Front)	
+				1.0f, 1.0f,								// Bottom Left Of The Quad (Back)
+				1.0f, 0.0f,								// Top Left Of The Quad (Back)
+				0.0f, 1.0f,								// Bottom Right Of The Quad (Back)
+				0.0f, 0.0f,								// Top Right Of The Quad (Back)	
 				
-				0.0f, 0.0f,								// Top Left Of The Quad (Front)
-				0.0f, 1.0f,								// Bottom Left Of The Quad (Front)
-				1.0f, 0.0f,								// Top Right Of The Quad (Front)
-				1.0f,1.0f,								// Bottom Right Of The Quad (Front)	
+				0.0f, 0.0f,								// Top Left Of The Quad (Top)
+				0.0f, 1.0f,								// Bottom Left Of The Quad (Top)
+				1.0f, 0.0f,								// Top Right Of The Quad (Top)
+				1.0f, 1.0f,								// Bottom Right Of The Quad (Top)	
 				
-				0.0f, 0.0f,								// Top Left Of The Quad (Front)
-				0.0f, 1.0f,								// Bottom Left Of The Quad (Front)
-				1.0f, 0.0f,								// Top Right Of The Quad (Front)
-				1.0f,1.0f,								// Bottom Right Of The Quad (Front)	
+				1.0f, 0.0f,								// Top Left Of The Quad (Bottom)
+				0.0f, 0.0f,								// Top Right Of The Quad (Bottom)
+				1.0f, 1.0f,								// Bottom Left Of The Quad (Bottom)
+				0.0f, 1.0f,								// Bottom Right Of The Quad (Bottom)	
 				
-				0.0f, 0.0f,								// Top Left Of The Quad (Front)
-				0.0f, 1.0f,								// Bottom Left Of The Quad (Front)
-				1.0f, 0.0f,								// Top Right Of The Quad (Front)
-				1.0f,1.0f,								// Bottom Right Of The Quad (Front)	
+				1.0f, 1.0f,								// Bottom Right Of The Quad (Right)
+				1.0f, 0.0f,								// Top Right Of The Quad (Right)
+				0.0f, 1.0f,								// Bottom Left Of The Quad (Right)
+				0.0f, 0.0f,								// Top Left Of The Quad (Right)	
 				
-				0.0f, 0.0f,								// Top Left Of The Quad (Front)
-				0.0f, 1.0f,								// Bottom Left Of The Quad (Front)
-				1.0f, 0.0f,								// Top Right Of The Quad (Front)
-				1.0f,1.0f,								// Bottom Right Of The Quad (Front)	
+				0.0f, 1.0f,								// Bottom Right Of The Quad (Left)
+				1.0f, 1.0f,								// Bottom Left Of The Quad (Left)
+				0.0f, 0.0f,								// Top Right Of The Quad (Left)
+				1.0f, 0.0f,								// Top Left Of The Quad (Left)	
+			};
+			
+			float [] cubeNormals = {
+				 0.0f, 0.0f, 1.0f,						// Top Left Of The Quad (Front)
+				 0.0f, 0.0f, 1.0f,						// Bottom Left Of The Quad (Front)
+				 0.0f, 0.0f, 1.0f,						// Top Right Of The Quad (Front)
+				 0.0f, 0.0f, 1.0f,						// Bottom Right Of The Quad (Front)
+
+				 0.0f, 0.0f,-1.0f,						// Bottom Left Of The Quad (Back)
+				 0.0f, 0.0f,-1.0f,						// Top Left Of The Quad (Back)
+				 0.0f, 0.0f,-1.0f,						// Bottom Right Of The Quad (Back)
+				 0.0f, 0.0f,-1.0f,						// Top Right Of The Quad (Back)
+				
+				 0.0f, 1.0f, 0.0f,						// Top Left Of The Quad (Top)
+				 0.0f, 1.0f, 0.0f,						// Bottom Left Of The Quad (Top)
+				 0.0f, 1.0f, 0.0f,						// Top Right Of The Quad (Top)
+				 0.0f, 1.0f, 0.0f,						// Bottom Right Of The Quad (Top)
+				
+				 0.0f,-1.0f, 0.0f,						// Top Left Of The Quad (Bottom)
+				 0.0f,-1.0f, 0.0f,						// Top Right Of The Quad (Bottom)
+				 0.0f,-1.0f, 0.0f,						// Bottom Left Of The Quad (Bottom)
+				 0.0f,-1.0f, 0.0f,						// Bottom Right Of The Quad (Bottom)
+				
+				 1.0f, 0.0f, 0.0f,						// Bottom Right Of The Quad (Right)
+				 1.0f, 0.0f, 0.0f,						// Top Right Of The Quad (Right)
+				 1.0f, 0.0f, 0.0f,						// Bottom Left Of The Quad (Right)
+				 1.0f, 0.0f, 0.0f,						// Top Left Of The Quad (Right)
+				
+				-1.0f, 0.0f, 0.0f,						// Bottom Right Of The Quad (Left)
+				-1.0f, 0.0f, 0.0f,						// Bottom Left Of The Quad (Left)
+				-1.0f, 0.0f, 0.0f,						// Top Right Of The Quad (Left)
+				-1.0f, 0.0f, 0.0f,						// Top Left Of The Quad (Left)
 			};
 			
 			GL1.VertexPointer(3, All1.Float, 0, cubeVerticies);
@@ -243,6 +353,9 @@ namespace NeHeLesson7
 			
 			GL1.TexCoordPointer (2, All1.Float, 0, cubeTexs);
 			GL1.EnableClientState (All1.TextureCoordArray);
+			
+			GL1.NormalPointer(All1.Float, 0, cubeNormals);
+			GL1.EnableClientState(All1.NormalArray);
 		
 			GL1.DrawArrays (All1.TriangleStrip, 0, 4);
 			
@@ -258,15 +371,68 @@ namespace NeHeLesson7
 			
 			SwapBuffers ();
 			
-			xrot += 0.75f;
-			yrot += 0.5f;
-			zrot += 1.0f;
+			xrot+=xspeed;				// Add xspeed To xrot
+    		yrot+=yspeed;				// Add yspeed To yrot
 			
-			if (xrot > 360f) xrot -= 360f;
-			if (yrot > 360f) yrot -= 360f;
-			if (zrot > 360f) zrot -= 360f;
+			handleButtons ();
 		}
 		
-
+		private void handleButtons ()
+		{
+			if (lightButton.TouchInside && !lp)		// L Key Being Pressed Not Held?
+			{	
+				lp=true;							// lp Becomes TRUE
+				light=!light;						// Toggle Light TRUE/FALSE
+				if (!light)							// If Not Light
+				{
+					GL1.Disable(All1.Lighting);		// Disable Lighting
+				}
+				else								// Otherwise
+				{
+					GL1.Enable(All1.Lighting);		// Enable Lighting
+				}		
+			}
+			if (!lightButton.TouchInside)			// Has L Key Been Released?
+			{
+				lp=false;							// If So, lp Becomes FALSE
+			}
+			if (filterButton.TouchInside && !fp)	// Is F Key Being Pressed?
+			{
+				fp=true;							// fp Becomes TRUE
+				filter+=1;							// filter Value Increases By One
+				if (filter>2)						// Is Value Greater Than 2?
+				{
+					filter=0;						// If So, Set filter To 0
+				}
+			}
+			if (!filterButton.TouchInside)			// Has F Key Been Released?
+			{
+				fp=false;							// If So, fp Becomes FALSE
+			}
+			if (minusButton.TouchInside)			// Is Page Up Being Pressed?
+			{	
+				z-=0.02f;							// If So, Move Into The Screen
+			}
+			if (plusButton.TouchInside)				// Is Page Down Being Pressed?
+			{
+				z+=0.02f;							// If So, Move Towards The Viewer
+			}
+			if (upButton.TouchInside)				// Is Up Arrow Being Pressed?
+			{
+				xspeed-=0.01f;						// If So, Decrease xspeed
+			}
+			if (downButton.TouchInside)				// Is Down Arrow Being Pressed?
+			{
+				xspeed+=0.01f;						// If So, Increase xspeed
+			}
+			if (rightButton.TouchInside)			// Is Right Arrow Being Pressed?
+			{
+				yspeed+=0.01f;						// If So, Increase yspeed
+			}
+			if (leftButton.TouchInside)				// Is Left Arrow Being Pressed?
+			{
+				yspeed-=0.01f;						// If So, Decrease yspeed
+			}
+		}
 	}
 }

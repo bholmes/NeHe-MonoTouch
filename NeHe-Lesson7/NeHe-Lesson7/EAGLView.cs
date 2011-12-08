@@ -50,7 +50,7 @@ namespace NeHeLesson7
 		private void SetupButtons()
 		{
 			float ypos = this.Bounds.Width - 40f;
-			float xpos = this.Bounds.Height - 60f;
+			float xpos = this.Bounds.Height - 40f;
 			
 			this.AddButton (ref lightButton, 10, ypos, "Light");
 			this.AddButton (ref filterButton, xpos, ypos, "Filter");
@@ -67,8 +67,8 @@ namespace NeHeLesson7
 		
 		private void AddButton (ref UIButton button, float x, float y, string title)
 		{
-			button = new UIButton (new System.Drawing.RectangleF (x, y, 50, 30));
-			button.BackgroundColor = new UIColor (0, 0, 1, 1);
+			button = UIButton.FromType (UIButtonType.RoundedRect);
+			button.Frame = new System.Drawing.RectangleF(x, y, 50, 30);
 			button.SetTitle (title, UIControlState.Normal);
 			this.AddSubview (button);	
 		}
